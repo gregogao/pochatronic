@@ -243,7 +243,7 @@ function exitGame() {
       </div>
 
       <div v-show="activeTab === 'ranking'" class="tab-content ranking-list">
-        <h2 class="ranking-title">🏆 Ranking Actual</h2>
+        <h2 class="ranking-title">🏆 Ranking 🏆</h2>
         <div class="ranking-card" v-for="(player, index) in ranking" :key="player.id">
           <div class="rank-pos">{{ index + 1 }}</div>
           <div class="rank-info">
@@ -276,6 +276,8 @@ function exitGame() {
 
 <style>
 :root {
+  --col-cards: 34px;
+  --col-dealer: 50px;
   --primary: #2c3e50; --accent: #3498db; --bg: #f4f7f6; --danger: #e74c3c;
   --warning: #f39c12; --nav-height: 70px;
 }
@@ -311,27 +313,33 @@ header h1 { text-align: center; color: var(--primary); font-size: 1.4rem; margin
 .th-sticky-meta {
   position: sticky;
   left: 0;
-  z-index: 11;
+  z-index: 12;
+  width: calc(var(--col-cards) + var(--col-dealer));
+  min-width: calc(var(--col-cards) + var(--col-dealer));
+  max-width: calc(var(--col-cards) + var(--col-dealer));
   background: #3e4f5f !important;
-  width: 84px;
   border-right: 2px solid #ccc;
 }
 /* Fijar columna Cartas */
 .th-sticky-c {
   position: sticky;
   left: 0;
-  z-index: 5;
+  z-index: 6;
+  width: var(--col-cards);
+  min-width: var(--col-cards);
+  max-width: var(--col-cards);
   background: #f8f9fa !important;
-  width: 34px;
   border-right: 1px solid #eee;
 }
 /* Fijar columna Dealer */
 .th-sticky-d {
   position: sticky;
-  left: 34px;
-  z-index: 5;
+  left: var(--col-cards);
+  z-index: 6;
+  width: var(--col-dealer);
+  min-width: var(--col-dealer);
+  max-width: var(--col-dealer);
   background: #f1f3f4 !important;
-  width: 50px;
   border-right: 2px solid #ddd;
 }
 
@@ -339,6 +347,9 @@ thead th { position: sticky; top: 0; z-index: 10; }
 
 th { background: var(--primary); color: white; padding: 10px 2px; font-size: 0.65rem; font-weight: 800; }
 .th-player { font-size: 0.75rem; min-width: 65px; }
+.td-score {
+  min-width: 65px;
+}
 th.is-hot { background-color: var(--warning) !important; color: white; }
 
 td { border-bottom: 1px solid #eee; padding: 8px 0; text-align: center; background: white; }
