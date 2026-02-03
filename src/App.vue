@@ -208,7 +208,8 @@ function resetGame() {
           <table class="full-width-table">
             <thead>
               <tr>
-                <th colspan="2" class="th-narrow" style="width: 84px;">REPARTE</th>
+                <th class="th-narrow th-sticky-cards">C.</th>
+                <th class="th-narrow th-sticky-dealer">REPARTE</th>
                 <th v-for="(p, pIndex) in game.players" :key="p.id" 
                     class="th-player"
                     :class="{ 'is-hot': hotPlayers.has(pIndex) }">
@@ -219,8 +220,8 @@ function resetGame() {
             </thead>
             <tbody>
               <tr v-for="(round, rIndex) in game.rounds" :key="rIndex">
-                <td class="td-cards">{{ round.cards }}</td>
-                <td class="td-dealer">{{ dealerByRound[rIndex] }}</td>
+                <td class="td-cards th-sticky-cards">{{ round.cards }}</td>
+                <td class="td-dealer th-sticky-dealer">{{ dealerByRound[rIndex] }}</td>
                 <td v-for="(score, pIndex) in round.scores" :key="pIndex" class="td-score">
                   <input type="number" v-model.number="round.scores[pIndex]" 
                          :class="{ 'is-negative': round.scores[pIndex] < 0 }" />
@@ -259,7 +260,6 @@ function resetGame() {
 </template>
 
 <style>
-/* Estilos originales sin cambios */
 :root {
   --primary: #2c3e50; --accent: #3498db; --bg: #f4f7f6; --danger: #e74c3c;
   --warning: #f39c12; --nav-height: 70px; --muted-bg: #fdfdfd; --muted-text: #95a5a6;
@@ -267,6 +267,64 @@ function resetGame() {
 body { margin: 0; background: var(--bg); font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; -webkit-font-smoothing: antialiased; }
 #app.is-playing { padding-bottom: calc(var(--nav-height) + 10px); }
 header h1 { text-align: center; color: var(--primary); font-size: 1.4rem; margin: 15px 0; letter-spacing: -0.5px; }
+
+/* CONTENEDOR TABLA CON SCROLL */
+.table-wrapper { 
+  background: white; 
+  width: 100%; 
+  overflow-x: auto; 
+  -webkit-overflow-scrolling: touch; 
+}
+.full-width-table { 
+  width: 100%; 
+  border-collapse: separate; 
+  border-spacing: 0;
+  min-width: 480px; /* Evita que las columnas de jugadores sean demasiado estrechas */
+}
+
+/* COLUMNAS FIJAS (STICKY) */
+.th-sticky-cards {
+  position: sticky;
+  left: 0;
+  z-index: 5;
+  background: #f8f9fa !important;
+  min-width: 30px;
+  border-right: 1px solid #eee;
+}
+.th-sticky-dealer {
+  position: sticky;
+  left: 30px; /* Se pega al lado de la de cartas */
+  z-index: 5;
+  background: #f1f3f4 !important;
+  min-width: 55px;
+  border-right: 2px solid #ddd;
+}
+
+thead th { position: sticky; top: 0; z-index: 10; }
+thead th.th-sticky-cards, thead th.th-sticky-dealer { z-index: 11; }
+
+th { background: var(--primary); color: white; padding: 10px 2px; font-size: 0.65rem; font-weight: 800; }
+.th-player { font-size: 0.75rem; min-width: 65px; }
+th.is-hot { background-color: var(--warning) !important; color: white; }
+
+td { border-bottom: 1px solid #eee; padding: 8px 0; text-align: center; background: white; }
+.td-cards { font-weight: bold; font-size: 0.8rem; }
+.td-dealer { font-size: 0.7rem; color: #666; font-weight: bold; }
+
+/* INPUTS OPTIMIZADOS PARA MÓVIL */
+input[type=number] { 
+  width: 48px; 
+  height: 38px; 
+  border: 1px solid #dcdde1; 
+  border-radius: 6px; 
+  text-align: center; 
+  font-size: 1.1rem; 
+  -moz-appearance: textfield;
+}
+input::-webkit-outer-spin-button, input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+input.is-negative { background: #fee2e2; color: var(--danger); border-color: #fca5a5; font-weight: bold; }
+
+/* RESTO DE ESTILOS MANTENIDOS */
 .setup-container { padding: 20px; text-align: center; max-width: 400px; margin: 0 auto; }
 .grid-buttons { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 20px; }
 .btn-main { padding: 25px; font-size: 1.3rem; background: white; border: 2px solid var(--accent); border-radius: 12px; cursor: pointer; color: var(--accent); font-weight: bold; }
@@ -282,17 +340,7 @@ header h1 { text-align: center; color: var(--primary); font-size: 1.4rem; margin
 .input-group input { width: 90%; padding: 12px; margin: 8px 0; border-radius: 8px; border: 1px solid #ccc; font-size: 1rem; }
 .btn-start { background: var(--accent); color: white; width: 100%; padding: 15px; margin-top: 20px; border: none; border-radius: 8px; font-weight: bold; font-size: 1.1rem; }
 .btn-back { background: transparent; color: #666; width: 100%; padding: 10px; border: none; }
-.table-wrapper { background: white; width: 100%; }
-.full-width-table { width: 100%; border-collapse: collapse; table-layout: fixed; }
-thead { position: sticky; top: 0; z-index: 10; }
-th { background: var(--primary); color: white; padding: 12px 2px; font-size: 0.65rem; font-weight: 800; }
-.th-player { font-size: 0.85rem; }
-th.is-hot { background-color: var(--warning) !important; color: white; }
 .name-hot { color: var(--warning) !important; }
-.th-narrow { width: 42px; background: #3e4f5f; }
-td { border-bottom: 1px solid #eee; padding: 10px 0; text-align: center; background: white; }
-input[type=number] { width: 92%; height: 46px; border: 1px solid #dcdde1; border-radius: 8px; text-align: center; font-size: 1.2rem; }
-input.is-negative { background: #fee2e2; color: var(--danger); border-color: #fca5a5; font-weight: bold; }
 .ranking-list { padding: 10px; max-width: 92%; margin: 0 auto; }
 .ranking-card { display: flex; align-items: center; background: white; margin-bottom: 12px; padding: 15px; border-radius: 15px; }
 .rank-pos { font-size: 1.3rem; font-weight: 800; width: 40px; color: var(--accent); }
