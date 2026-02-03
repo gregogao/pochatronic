@@ -389,15 +389,16 @@ header h1 { text-align: center; color: var(--primary); font-size: 1.4rem; margin
 
 /* Estilo para la opción 10 dentro del menú desplegable */
 .opt-ten {
-  background-color: #d1e9ff !important; /* Azul claro */
+  background-color: #d1e9ff; /* Azul claro */
+  box-shadow: 0 0 10px 100px #3498db inset;
   font-weight: bold;
   color: #000;
 }
 
-/* En algunos navegadores como Chrome, esto ayuda a resaltar la opción */
+/* En algunos navegadores como Chrome, esto ayuda a resaltar la opción 
 option:checked, option:hover {
   box-shadow: 0 0 10px 100px #3498db inset;
-}
+}*/
 
 
 
