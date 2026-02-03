@@ -1,0 +1,12 @@
+https://gregogao.github.io/pochatronic/
+
+ANDROID (Chrome / Edge)
+- Abrir URL
+- Aparece banner:
+- “Instalar Pochatronic”
+- Aceptar
+
+iOS (Safari)
+* Abrir URL
+* Botón compartir
+* "Añadir a pantalla de inicio”

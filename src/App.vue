@@ -89,6 +89,29 @@ function startGame() {
   saveCurrentGame()
 }
 
+function prepareScore(rIndex, pIndex) {
+  // Si la casilla está vacía (null), le ponemos un 10 
+  // justo antes de que se abra el desplegable.
+  if (game.rounds[rIndex].scores[pIndex] === null) {
+    game.rounds[rIndex].scores[pIndex] = 10
+  }
+}
+
+
+const getScoreOptionsForRound = (numCards) => {
+  const min = -(numCards * 5);
+  const max = 10 + (numCards * 5);
+  const options = [];
+  
+  for (let n = min; n <= max; n += 5) {
+    // Aplicamos tu regla anterior: saltar el 0 y el 5
+    if (n !== 0 && n !== 5) {
+      options.push(n);
+    }
+  }
+  return options;
+};
+
 const totals = computed(() => {
   return game.players.map((player, pIndex) => {
     let negativeRounds = 0
@@ -237,9 +260,21 @@ function exitGame() {
                 <td class="td-cards th-sticky-c">{{ round.cards }}</td>
                 <td class="td-dealer th-sticky-d">{{ dealerByRound[rIndex] }}</td>
                 <td v-for="(score, pIndex) in round.scores" :key="pIndex" class="td-score">
-                  <input type="number" v-model.number="round.scores[pIndex]" 
-                         :class="{ 'is-negative': round.scores[pIndex] < 0 }" 
-                         placeholder="" />
+                  <select 
+                    v-model.number="round.scores[pIndex]" 
+                    class="select-score"
+                    :class="{ 
+                      'is-negative': round.scores[pIndex] < 0, 
+                      'is-placeholder': round.scores[pIndex] === null 
+                    }"
+                    @pointerdown="prepareScore(rIndex, pIndex)"
+                  >
+                    <option v-if="round.scores[pIndex] === null" :value="null">-</option>
+                    
+                    <option v-for="n in getScoreOptionsForRound(round.cards)" :key="n" :value="n">
+                      {{ n > 0 ? '+' + n : n }}
+                    </option>
+                  </select>
                 </td>
               </tr>
             </tbody>
@@ -370,6 +405,48 @@ input[type=number] {
   font-size: 1.1rem; 
 }
 input.is-negative { background: #fee2e2; color: var(--danger); border-color: #fca5a5; font-weight: bold; }
+
+/* Estilo para el selector de puntos */
+.select-score { 
+  width: 58px; 
+  height: 38px; 
+  border: 1px solid #dcdde1; 
+  border-radius: 6px; 
+  font-size: 1rem; 
+  background: white;
+  cursor: pointer;
+  
+  /* Centrado total del texto */
+  text-align: center;
+  text-align-last: center; /* Crucial para navegadores móviles */
+  vertical-align: middle;
+  
+  /* Reset de estilos nativos para mejor apariencia */
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  appearance: none;
+  -webkit-appearance: none;
+}
+
+/* Mantener el feedback visual de negativos */
+/* Estilo opcional para cuando aún no hay puntos (el guion) */
+.select-score.is-placeholder {
+  color: #ccc;
+}
+
+.select-score.is-negative { 
+  background: #fee2e2; 
+  color: var(--danger); 
+  border-color: #fca5a5; 
+  font-weight: bold; 
+}
+
+
+/* Centrar el texto dentro del select (truco para iOS/Android) */
+.select-score {
+  text-align-last: center;
+}
 
 /* RANKING ACTIONS */
 .ranking-actions {
