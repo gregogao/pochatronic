@@ -87,7 +87,6 @@ function startGame() {
   saveCurrentGame()
 }
 
-// LÓGICA DE PUNTUACIÓN Y DESEMPATE REVISADA
 const totals = computed(() => {
   return game.players.map((player, pIndex) => {
     let negativeRounds = 0
@@ -103,7 +102,6 @@ const totals = computed(() => {
       return sum + s
     }, 0)
 
-    // Formateamos la cadena de texto para el ranking: "minxN"
     const worstStr = worstScoreCount > 0 ? `${worstScore}x${worstScoreCount}` : worstScore
 
     return { 
@@ -129,7 +127,8 @@ const ranking = computed(() => {
   })
 })
 
-function resetGame() {
+// NUEVAS FUNCIONES DE CIERRE
+function finishAndSave() {
   if (confirm("¿Finalizar y guardar esta partida en el historial?")) {
     const snapshot = {
       date: game.startTime || new Date().toLocaleString(),
@@ -140,13 +139,23 @@ function resetGame() {
     history.value.unshift(snapshot)
     if (history.value.length > 10) history.value.pop()
     localStorage.setItem('pocha_history_list', JSON.stringify(history.value))
-    localStorage.removeItem('pocha_current_backup')
-    game.phase = 'menu'
-    game.numPlayers = 0
-    game.players = []
-    game.rounds = []
-    activeTab.value = 'table'
+    exitGame()
   }
+}
+
+function finishWithoutSaving() {
+  if (confirm("¿Seguro que quieres cerrar la partida? No se guardará en el historial.")) {
+    exitGame()
+  }
+}
+
+function exitGame() {
+  localStorage.removeItem('pocha_current_backup')
+  game.phase = 'menu'
+  game.numPlayers = 0
+  game.players = []
+  game.rounds = []
+  activeTab.value = 'table'
 }
 </script>
 
@@ -208,8 +217,7 @@ function resetGame() {
           <table class="full-width-table">
             <thead>
               <tr>
-                <th class="th-narrow th-sticky-cards">C.</th>
-                <th class="th-narrow th-sticky-dealer">REPARTE</th>
+                <th colspan="2" class="th-narrow th-sticky-meta">REPARTE</th>
                 <th v-for="(p, pIndex) in game.players" :key="p.id" 
                     class="th-player"
                     :class="{ 'is-hot': hotPlayers.has(pIndex) }">
@@ -220,8 +228,8 @@ function resetGame() {
             </thead>
             <tbody>
               <tr v-for="(round, rIndex) in game.rounds" :key="rIndex">
-                <td class="td-cards th-sticky-cards">{{ round.cards }}</td>
-                <td class="td-dealer th-sticky-dealer">{{ dealerByRound[rIndex] }}</td>
+                <td class="td-cards th-sticky-c">{{ round.cards }}</td>
+                <td class="td-dealer th-sticky-d">{{ dealerByRound[rIndex] }}</td>
                 <td v-for="(score, pIndex) in round.scores" :key="pIndex" class="td-score">
                   <input type="number" v-model.number="round.scores[pIndex]" 
                          :class="{ 'is-negative': round.scores[pIndex] < 0 }" />
@@ -248,7 +256,11 @@ function resetGame() {
           </div>
           <div class="rank-score">{{ player.total }}</div>
         </div>
-        <button @click="resetGame" class="btn-reset">🔄 FINALIZAR Y GUARDAR</button>
+        
+        <div class="ranking-actions">
+          <button @click="finishAndSave" class="btn-reset">🔄 FINALIZAR Y GUARDAR</button>
+          <button @click="finishWithoutSaving" class="btn-finish-only">🚪 Finalizar sin guardar</button>
+        </div>
       </div>
 
       <nav class="bottom-nav">
@@ -262,13 +274,13 @@ function resetGame() {
 <style>
 :root {
   --primary: #2c3e50; --accent: #3498db; --bg: #f4f7f6; --danger: #e74c3c;
-  --warning: #f39c12; --nav-height: 70px; --muted-bg: #fdfdfd; --muted-text: #95a5a6;
+  --warning: #f39c12; --nav-height: 70px;
 }
 body { margin: 0; background: var(--bg); font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; -webkit-font-smoothing: antialiased; }
 #app.is-playing { padding-bottom: calc(var(--nav-height) + 10px); }
 header h1 { text-align: center; color: var(--primary); font-size: 1.4rem; margin: 15px 0; letter-spacing: -0.5px; }
 
-/* CONTENEDOR TABLA CON SCROLL */
+/* TABLE SCROLL & STICKY LOGIC */
 .table-wrapper { 
   background: white; 
   width: 100%; 
@@ -279,29 +291,38 @@ header h1 { text-align: center; color: var(--primary); font-size: 1.4rem; margin
   width: 100%; 
   border-collapse: separate; 
   border-spacing: 0;
-  min-width: 480px; /* Evita que las columnas de jugadores sean demasiado estrechas */
+  min-width: 480px; 
 }
 
-/* COLUMNAS FIJAS (STICKY) */
-.th-sticky-cards {
+/* Fijar cabecera REPARTE */
+.th-sticky-meta {
+  position: sticky;
+  left: 0;
+  z-index: 11;
+  background: #3e4f5f !important;
+  width: 84px;
+  border-right: 2px solid #ccc;
+}
+/* Fijar columna Cartas */
+.th-sticky-c {
   position: sticky;
   left: 0;
   z-index: 5;
   background: #f8f9fa !important;
-  min-width: 30px;
+  width: 34px;
   border-right: 1px solid #eee;
 }
-.th-sticky-dealer {
+/* Fijar columna Dealer */
+.th-sticky-d {
   position: sticky;
-  left: 30px; /* Se pega al lado de la de cartas */
+  left: 34px;
   z-index: 5;
   background: #f1f3f4 !important;
-  min-width: 55px;
+  width: 50px;
   border-right: 2px solid #ddd;
 }
 
 thead th { position: sticky; top: 0; z-index: 10; }
-thead th.th-sticky-cards, thead th.th-sticky-dealer { z-index: 11; }
 
 th { background: var(--primary); color: white; padding: 10px 2px; font-size: 0.65rem; font-weight: 800; }
 .th-player { font-size: 0.75rem; min-width: 65px; }
@@ -311,7 +332,6 @@ td { border-bottom: 1px solid #eee; padding: 8px 0; text-align: center; backgrou
 .td-cards { font-weight: bold; font-size: 0.8rem; }
 .td-dealer { font-size: 0.7rem; color: #666; font-weight: bold; }
 
-/* INPUTS OPTIMIZADOS PARA MÓVIL */
 input[type=number] { 
   width: 48px; 
   height: 38px; 
@@ -319,37 +339,43 @@ input[type=number] {
   border-radius: 6px; 
   text-align: center; 
   font-size: 1.1rem; 
-  -moz-appearance: textfield;
 }
-input::-webkit-outer-spin-button, input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
 input.is-negative { background: #fee2e2; color: var(--danger); border-color: #fca5a5; font-weight: bold; }
 
-/* RESTO DE ESTILOS MANTENIDOS */
+/* RANKING ACTIONS */
+.ranking-actions {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-top: 20px;
+  padding-bottom: 30px;
+}
+.btn-reset { width: 90%; padding: 15px; background: #fff; color: var(--danger); border: 2px solid var(--danger); border-radius: 10px; font-weight: bold; margin-bottom: 12px; }
+.btn-finish-only { background: transparent; border: none; color: #888; text-decoration: underline; font-size: 0.9rem; padding: 10px; }
+
+/* ESTILOS ORIGINALES MANTENIDOS */
 .setup-container { padding: 20px; text-align: center; max-width: 400px; margin: 0 auto; }
 .grid-buttons { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 20px; }
-.btn-main { padding: 25px; font-size: 1.3rem; background: white; border: 2px solid var(--accent); border-radius: 12px; cursor: pointer; color: var(--accent); font-weight: bold; }
-.menu-actions { display: flex; flex-direction: column; gap: 15px; margin-top: 40px; }
-.btn-main-large { padding: 30px; font-size: 1.2rem; background: var(--accent); color: white; border: none; border-radius: 15px; font-weight: 800; cursor: pointer; }
-.btn-secondary-large { padding: 20px; font-size: 1rem; background: white; color: var(--primary); border: 2px solid var(--primary); border-radius: 15px; font-weight: 700; cursor: pointer; }
-.backup-alert { margin-top: 40px; background: #fff3cd; border: 1px solid #ffeeba; padding: 15px; border-radius: 12px; color: #856404; cursor: pointer; }
+.btn-main { padding: 25px; font-size: 1.3rem; background: white; border: 2px solid var(--accent); border-radius: 12px; color: var(--accent); font-weight: bold; }
+.btn-main-large { padding: 30px; font-size: 1.2rem; background: var(--accent); color: white; border: none; border-radius: 15px; font-weight: 800; width: 100%; margin-bottom: 10px; }
+.btn-secondary-large { padding: 20px; font-size: 1rem; background: white; color: var(--primary); border: 2px solid var(--primary); border-radius: 15px; font-weight: 700; width: 100%; }
+.backup-alert { margin-top: 40px; background: #fff3cd; border: 1px solid #ffeeba; padding: 15px; border-radius: 12px; color: #856404; }
 .history-container { padding: 10px; max-width: 92%; margin: 0 auto; }
 .history-item { background: white; padding: 15px; border-radius: 12px; margin-bottom: 10px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
 .h-header { display: flex; justify-content: space-between; font-size: 0.8rem; color: #888; }
 .h-winner { font-weight: bold; color: var(--primary); font-size: 1.1rem; }
 .btn-back-menu { width: 100%; padding: 15px; margin-top: 20px; background: var(--primary); color: white; border: none; border-radius: 10px; font-weight: bold; }
 .input-group input { width: 90%; padding: 12px; margin: 8px 0; border-radius: 8px; border: 1px solid #ccc; font-size: 1rem; }
-.btn-start { background: var(--accent); color: white; width: 100%; padding: 15px; margin-top: 20px; border: none; border-radius: 8px; font-weight: bold; font-size: 1.1rem; }
+.btn-start { background: var(--accent); color: white; width: 100%; padding: 15px; margin-top: 20px; border: none; border-radius: 8px; font-weight: bold; }
 .btn-back { background: transparent; color: #666; width: 100%; padding: 10px; border: none; }
-.name-hot { color: var(--warning) !important; }
 .ranking-list { padding: 10px; max-width: 92%; margin: 0 auto; }
 .ranking-card { display: flex; align-items: center; background: white; margin-bottom: 12px; padding: 15px; border-radius: 15px; }
 .rank-pos { font-size: 1.3rem; font-weight: 800; width: 40px; color: var(--accent); }
 .rank-info { flex-grow: 1; display: flex; flex-direction: column; }
 .rank-name { font-weight: 700; font-size: 1.1rem; color: var(--primary); }
-.rank-details { font-size: 0.75rem; color: #999; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
+.rank-details { font-size: 0.75rem; color: #999; font-weight: 600; text-transform: uppercase; }
 .rank-score { font-size: 1.6rem; font-weight: 800; text-align: right; min-width: 50px; }
 .bottom-nav { position: fixed; bottom: 0; left: 0; right: 0; display: flex; background: white; border-top: 1px solid #ddd; height: var(--nav-height); z-index: 9999; }
 .bottom-nav button { flex: 1; border: none; background: none; font-weight: 800; color: #aaa; }
 .bottom-nav button.active { color: var(--accent); background: #f0f9ff; box-shadow: inset 0 4px 0 var(--accent); }
-.btn-reset { margin: 30px auto; display: block; width: 90%; padding: 15px; background: #fff; color: var(--danger); border: 2px solid var(--danger); border-radius: 10px; font-weight: bold; }
 </style>
