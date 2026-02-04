@@ -8,6 +8,24 @@ const scorePicker = reactive({
   options: []
 })
 
+const orderedScoreOptions = computed(() => {
+  if (!scorePicker.open) return []
+
+  const opts = scorePicker.options.filter(o => o !== null)
+
+  const priority = [null, -5, -10, 10, 15, 20, 25]
+
+  const prioritySet = new Set(priority)
+
+  const main = priority.filter(v =>
+    v === null || opts.includes(v)
+  )
+
+  const rest = opts.filter(v => !prioritySet.has(v))
+
+  return [...main, ...rest]
+})
+
 const game = reactive({
   phase: 'menu', 
   numPlayers: 0,
@@ -37,7 +55,14 @@ const loadAllData = () => {
 }
 
 watch(() => game.rounds, () => saveCurrentGame(), { deep: true })
-onMounted(() => loadAllData())
+/*onMounted(() => loadAllData())*/
+
+onMounted(() => {
+  const wrapper = document.querySelector('.table-wrapper')
+  if (wrapper) {
+    wrapper.scrollLeft = (wrapper.scrollWidth - wrapper.clientWidth) / 2
+  }
+})
 
 const dealerByRound = computed(() => {
   return game.rounds.map((_, roundIndex) => {
@@ -72,11 +97,15 @@ function initSetup(n) {
 }
 
 function openScorePicker(rIndex, pIndex) {
-  const round = game.rounds[rIndex]
   scorePicker.open = true
   scorePicker.rIndex = rIndex
   scorePicker.pIndex = pIndex
-  scorePicker.options = getScoreOptionsForRound(round.cards)
+  scorePicker.options = getScoreOptionsForRound(game.rounds[rIndex].cards)
+
+  nextTick(() => {
+    const el = document.querySelector('.score-option-ten')
+    el?.scrollIntoView({ block: 'center' })
+  })
 }
 
 function closeScorePicker() {
@@ -118,8 +147,21 @@ function prepareScore(rIndex, pIndex) {
   }
 }
 
-
 const getScoreOptionsForRound = (numCards) => {
+  const min = -(numCards * 5)
+  const max = 10 + (numCards * 5)
+  const options = []
+
+  for (let n = min; n <= max; n += 5) {
+    if (n === 0 || n === 5) continue
+    options.push(n)
+  }
+
+  return options
+}
+
+
+/*const getScoreOptionsForRound = (numCards) => {
   const min = -(numCards * 5);
   const max = 10 + (numCards * 5);
   const options = [];
@@ -137,7 +179,7 @@ const getScoreOptionsForRound = (numCards) => {
     options.push(n);
   }
   return options;
-};
+}*/
 
 const totals = computed(() => {
   return game.players.map((player, pIndex) => {
@@ -337,10 +379,9 @@ function exitGame() {
       </nav>
     </main>
   </div>
-  <div v-if="scorePicker.open" class="score-modal">
-  <div class="score-sheet">
-    <div
-      v-for="n in scorePicker.options"
+  <div v-if="scorePicker.open" class="score-modal" @click="closeScorePicker">
+    <div class="score-sheet" @click.stop>
+      <div v-for="n in orderedScoreOptions"
       :key="n === null ? 'null' : n"
       class="score-option"
       :class="{
@@ -352,12 +393,8 @@ function exitGame() {
       <span v-if="n === null">—</span>
       <span v-else>{{ n > 0 ? '+' + n : n }}</span>
     </div>
-
-    <button class="score-cancel" @click="closeScorePicker">
-      Cancelar
-    </button>
+    </div>
   </div>
-</div>
 </template>
 
 <style>
@@ -368,7 +405,10 @@ function exitGame() {
   --warning: #f39c12; --nav-height: 70px;
 }
 body { margin: 0; background: var(--bg); font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; -webkit-font-smoothing: antialiased; }
-#app.is-playing { padding-bottom: calc(var(--nav-height) + 10px); }
+#app.is-playing {
+  padding-bottom: calc(var(--nav-height) + 10px);
+  padding-top: env(safe-area-inset-top);
+}
 
 /* CAMBIO 4: Margen 0 arriba si se está jugando */
 #app.is-playing header { display: none; }
@@ -555,6 +595,9 @@ input.is-negative { background: #fee2e2; color: var(--danger); border-color: #fc
 html, body {
   background: var(--bg);
   color: #000;
+  margin: 0;
+  padding: 0;
+  overscroll-behavior: none;
 }
 
 /* Asegura que la app ocupa todo el viewport */
@@ -586,6 +629,8 @@ body {
   width: 100%;
   border-radius: 16px 16px 0 0;
   padding: 12px;
+  max-height: 55vh;
+  overflow-y: auto;
   animation: slideUp 0.25s ease-out;
 }
 
@@ -625,6 +670,19 @@ body {
 @keyframes slideUp {
   from { transform: translateY(100%); }
   to { transform: translateY(0); }
+}
+
+.game-container {
+  padding: 0;
+}
+
+.table-wrapper {
+  padding: 0;
+  margin: 0;
+}
+
+.full-screen-table {
+  margin: 0;
 }
 
 </style>
