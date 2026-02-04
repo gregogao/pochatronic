@@ -1,6 +1,13 @@
 <script setup>
 import { reactive, computed, ref, onMounted, watch } from 'vue'
 
+const scorePicker = reactive({
+  open: false,
+  rIndex: null,
+  pIndex: null,
+  options: []
+})
+
 const game = reactive({
   phase: 'menu', 
   numPlayers: 0,
@@ -62,6 +69,23 @@ function initSetup(n) {
   game.numPlayers = n
   game.players = Array.from({ length: n }, (_, i) => ({ id: i, name: '' }))
   game.phase = 'setup'
+}
+
+function openScorePicker(rIndex, pIndex) {
+  const round = game.rounds[rIndex]
+  scorePicker.open = true
+  scorePicker.rIndex = rIndex
+  scorePicker.pIndex = pIndex
+  scorePicker.options = getScoreOptionsForRound(round.cards)
+}
+
+function closeScorePicker() {
+  scorePicker.open = false
+}
+
+function pickScore(value) {
+  game.rounds[scorePicker.rIndex].scores[scorePicker.pIndex] = value
+  closeScorePicker()
 }
 
 function startGame() {
@@ -263,25 +287,19 @@ function exitGame() {
                 <td class="td-cards th-sticky-c">{{ round.cards }}</td>
                 <td class="td-dealer th-sticky-d">{{ dealerByRound[rIndex] }}</td>
                 <td v-for="(score, pIndex) in round.scores" :key="pIndex" class="td-score">
-                  <select 
-                    v-model.number="round.scores[pIndex]" 
+                  <div
                     class="select-score"
-                    :class="{ 
-                      'is-negative': round.scores[pIndex] < 0, 
-                      'is-placeholder': round.scores[pIndex] === null 
+                    :class="{
+                      'is-negative': round.scores[pIndex] < 0,
+                      'is-placeholder': round.scores[pIndex] === null
                     }"
-                    @pointerdown="prepareScore(rIdx, pIdx)"
+                    @click="openScorePicker(rIndex, pIndex)"
                   >
-                    <option 
-                      v-for="n in getScoreOptionsForRound(round.cards)" 
-                      :key="n === null ? 'null' : n" 
-                      :value="n"
-                      :class="{ 'opt-ten': n === 10 }"
-                    >
-                      <template v-if="n === null"></template>
-                      <template v-else>{{ n > 0 ? '+' + n : n }}</template>
-                    </option>
-                  </select>
+                    <span v-if="round.scores[pIndex] === null">—</span>
+                    <span v-else>
+                      {{ round.scores[pIndex] > 0 ? '+' + round.scores[pIndex] : round.scores[pIndex] }}
+                    </span>
+                  </div>
                 </td>
               </tr>
             </tbody>
@@ -319,6 +337,27 @@ function exitGame() {
       </nav>
     </main>
   </div>
+  <div v-if="scorePicker.open" class="score-modal">
+  <div class="score-sheet">
+    <div
+      v-for="n in scorePicker.options"
+      :key="n === null ? 'null' : n"
+      class="score-option"
+      :class="{
+        negative: n < 0,
+        ten: n === 10
+      }"
+      @click="pickScore(n)"
+    >
+      <span v-if="n === null">—</span>
+      <span v-else>{{ n > 0 ? '+' + n : n }}</span>
+    </div>
+
+    <button class="score-cancel" @click="closeScorePicker">
+      Cancelar
+    </button>
+  </div>
+</div>
 </template>
 
 <style>
@@ -511,4 +550,81 @@ input.is-negative { background: #fee2e2; color: var(--danger); border-color: #fc
 .bottom-nav { position: fixed; bottom: 0; left: 0; right: 0; display: flex; background: white; border-top: 1px solid #ddd; height: var(--nav-height); z-index: 9999; }
 .bottom-nav button { flex: 1; border: none; background: none; font-weight: 800; color: #aaa; }
 .bottom-nav button.active { color: var(--accent); background: #f0f9ff; box-shadow: inset 0 4px 0 var(--accent); }
+
+/* FIX iOS DARK MODE */
+html, body {
+  background: var(--bg);
+  color: #000;
+}
+
+/* Asegura que la app ocupa todo el viewport */
+body {
+  min-height: 100vh;
+}
+
+/* Evita fondos transparentes heredando negro */
+#app,
+.game-container,
+.table-wrapper,
+.full-screen-table {
+  background: var(--bg);
+}
+
+/* OVERLAY */
+.score-modal {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.4);
+  z-index: 99999;
+  display: flex;
+  align-items: flex-end;
+}
+
+/* BOTTOM SHEET */
+.score-sheet {
+  background: white;
+  width: 100%;
+  border-radius: 16px 16px 0 0;
+  padding: 12px;
+  animation: slideUp 0.25s ease-out;
+}
+
+/* OPCIONES */
+.score-option {
+  padding: 14px;
+  margin-bottom: 6px;
+  border-radius: 10px;
+  text-align: center;
+  font-size: 1.1rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.score-option.negative {
+  color: var(--danger);
+}
+
+.score-option.ten {
+  background: #d1e9ff;
+  font-weight: 800;
+  border: 1px solid #3498db;
+}
+
+/* CANCELAR */
+.score-cancel {
+  width: 100%;
+  margin-top: 10px;
+  padding: 12px;
+  border: none;
+  background: #eee;
+  border-radius: 10px;
+  font-weight: 700;
+}
+
+/* ANIMACIÓN */
+@keyframes slideUp {
+  from { transform: translateY(100%); }
+  to { transform: translateY(0); }
+}
+
 </style>
