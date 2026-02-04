@@ -1,29 +1,11 @@
 <script setup>
-import { reactive, computed, ref, onMounted, watch } from 'vue'
+import { reactive, computed, ref, onMounted, watch, nextTick } from 'vue'
 
 const scorePicker = reactive({
   open: false,
   rIndex: null,
   pIndex: null,
   options: []
-})
-
-const orderedScoreOptions = computed(() => {
-  if (!scorePicker.open) return []
-
-  const opts = scorePicker.options.filter(o => o !== null)
-
-  const priority = [null, -5, -10, 10, 15, 20, 25]
-
-  const prioritySet = new Set(priority)
-
-  const main = priority.filter(v =>
-    v === null || opts.includes(v)
-  )
-
-  const rest = opts.filter(v => !prioritySet.has(v))
-
-  return [...main, ...rest]
 })
 
 const game = reactive({
@@ -103,8 +85,9 @@ function openScorePicker(rIndex, pIndex) {
   scorePicker.options = getScoreOptionsForRound(game.rounds[rIndex].cards)
 
   nextTick(() => {
-    const el = document.querySelector('.score-option-ten')
-    el?.scrollIntoView({ block: 'center' })
+    const sheet = document.querySelector('.score-sheet')
+    const ten = sheet?.querySelector('.score-option.ten')
+    ten?.scrollIntoView({ block: 'center' })
   })
 }
 
@@ -154,6 +137,12 @@ const getScoreOptionsForRound = (numCards) => {
 
   for (let n = min; n <= max; n += 5) {
     if (n === 0 || n === 5) continue
+
+    // Insertamos el "-" justo antes del 10
+    if (n === 10) {
+      options.push(null)
+    }
+
     options.push(n)
   }
 
@@ -337,7 +326,7 @@ function exitGame() {
                     }"
                     @click="openScorePicker(rIndex, pIndex)"
                   >
-                    <span v-if="round.scores[pIndex] === null">—</span>
+                    <span v-if="round.scores[pIndex] === null"> </span>
                     <span v-else>
                       {{ round.scores[pIndex] > 0 ? '+' + round.scores[pIndex] : round.scores[pIndex] }}
                     </span>
@@ -381,18 +370,20 @@ function exitGame() {
   </div>
   <div v-if="scorePicker.open" class="score-modal" @click="closeScorePicker">
     <div class="score-sheet" @click.stop>
-      <div v-for="n in orderedScoreOptions"
-      :key="n === null ? 'null' : n"
-      class="score-option"
-      :class="{
-        negative: n < 0,
-        ten: n === 10
-      }"
-      @click="pickScore(n)"
-    >
-      <span v-if="n === null">—</span>
-      <span v-else>{{ n > 0 ? '+' + n : n }}</span>
-    </div>
+      <div
+        v-for="n in scorePicker.options"
+        :key="n"
+        class="score-option"
+        :class="{
+          negative: n < 0,
+          ten: n === 10,
+          placeholder: n === null
+        }"
+        @click="pickScore(n)"
+      >
+        <span v-if="n === null">—</span>
+        <span v-else>{{ n > 0 ? '+' + n : n }}</span>
+      </div>
     </div>
   </div>
 </template>
@@ -535,6 +526,8 @@ input.is-negative { background: #fee2e2; color: var(--danger); border-color: #fc
 /* Estilo opcional para cuando aún no hay puntos (el guion) */
 .select-score.is-placeholder {
   color: #ccc;
+  font-weight: normal; /* Quita la negrita */
+  font-style: normal;  /* Opcional, por si algún navegador aplica cursiva */
 }
 
 .select-score.is-negative { 
@@ -654,6 +647,13 @@ body {
   font-weight: 800;
   border: 1px solid #3498db;
 }
+
+.score-option.placeholder {
+  color: #999;       /* Gris más suave */
+  font-weight: normal; /* Quita la negrita */
+  font-style: normal;  /* Opcional, por si algún navegador aplica cursiva */
+}
+
 
 /* CANCELAR */
 .score-cancel {
