@@ -132,15 +132,13 @@ const stormPlayers = computed(() => {
     let streak = 0
 
     for (const round of game.rounds) {
-      if (round.cards > 1) {
-        if (Number(round.scores[pIndex]) < 0) {
-          streak++
-          if (streak >= 3) {
-            stormPlayers.add(pIndex)
-          }
-        } else {
-          streak = 0
+      if (Number(round.scores[pIndex]) < 0) {
+        streak++
+        if (streak >= 3) {
+          stormPlayers.add(pIndex)
         }
+      } else {
+        streak = 0
       }
     }
   })
