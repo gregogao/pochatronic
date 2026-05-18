@@ -124,45 +124,47 @@ const hotPlayers = computed(() => {
   return hotIndices
 })
 
-
 const stormPlayers = computed(() => {
   const stormIndices = new Set()
 
   game.players.forEach((_, pIndex) => {
-    let streak = 0
-    let inStorm = false
+    let negativeStreak = 0
+    let stormActive = false
 
     for (const round of game.rounds) {
-      const score = Number(round.scores[pIndex])
+      const score = round.scores[pIndex]
 
-      if (score < 0) {
-        streak++
-
-        if (streak >= 3) {
-          inStorm = true
-          stormIndices.add(pIndex)
-        }
-      } else if (score > 0) {
-        // Se rompe la racha y se quita la tormenta
-        streak = 0
-        inStorm = false
-        stormIndices.delete(pIndex)
-      } else {
-        // score = 0 o null → no rompe tormenta pero tampoco suma
-        streak = 0
+      // ✅ Ignorar casillas vacías
+      if (score === null || score === undefined) {
+        continue
       }
-    }
 
-    // Si termina en tormenta → se queda marcado
-    if (inStorm) {
-      stormIndices.add(pIndex)
+      const num = Number(score)
+
+      if (num < 0) {
+        negativeStreak++
+
+        if (negativeStreak >= 3) {
+          stormActive = true
+        }
+
+      } else if (num > 0) {
+        // ✅ Positivo corta la tormenta
+        negativeStreak = 0
+        stormActive = false
+      }
+
+      // ✅ Si hay tormenta activa en este punto
+      if (stormActive) {
+        stormIndices.add(pIndex)
+      } else {
+        stormIndices.delete(pIndex)
+      }
     }
   })
 
   return stormIndices
 })
-
-
 
 function initSetup(n) {
   game.numPlayers = n
