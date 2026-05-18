@@ -106,9 +106,27 @@ const dealerByRound = computed(() => {
   })
 })
 
+const hotPlayers = computed(() => {
+  const hotIndices = new Set()
+  game.players.forEach((_, pIndex) => {
+    let streak = 0
+    for (const round of game.rounds) {
+      if (round.cards > 1) {
+        if (Number(round.scores[pIndex]) === 10) {
+          streak++
+          if (streak >= 4) hotIndices.add(pIndex)
+        } else {
+          streak = 0
+        }
+      }
+    }
+  })
+  return hotIndices
+})
+
 
 const stormPlayers = computed(() => {
-  const stormIndices = new Set()
+  const stormPlayers = new Set()
 
   game.players.forEach((_, pIndex) => {
     let streak = 0
@@ -118,7 +136,7 @@ const stormPlayers = computed(() => {
         if (Number(round.scores[pIndex]) < 0) {
           streak++
           if (streak >= 3) {
-            stormIndices.add(pIndex)
+            stormPlayers.add(pIndex)
           }
         } else {
           streak = 0
@@ -127,7 +145,8 @@ const stormPlayers = computed(() => {
     }
   })
 
-
+  return stormPlayers
+})
 
 
 function initSetup(n) {
