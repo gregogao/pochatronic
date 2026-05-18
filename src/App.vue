@@ -317,7 +317,7 @@ function exitGame() {
 
   <div id="app" :class="{ 'is-playing': game.phase === 'playing' }">
     <header v-if="game.phase !== 'playing'">
-      <h1>Pochatronic™ ♠️</h1>
+      <h1>TEST Pochatronic™ ♠️</h1>
     </header>
 
     <main v-if="game.phase === 'menu'" class="setup-container">
