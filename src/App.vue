@@ -126,16 +126,19 @@ const hotPlayers = computed(() => {
 
 
 const stormPlayers = computed(() => {
-  const stormPlayers = new Set()
+  const storm = new Set()
 
   game.players.forEach((_, pIndex) => {
     let streak = 0
 
     for (const round of game.rounds) {
-      if (Number(round.scores[pIndex]) < 0) {
+      const raw = round.scores[pIndex]
+      const score = Number(raw)
+
+      if (raw !== null && !isNaN(score) && score < 0) {
         streak++
         if (streak >= 3) {
-          stormPlayers.add(pIndex)
+          storm.add(pIndex)
         }
       } else {
         streak = 0
@@ -143,8 +146,9 @@ const stormPlayers = computed(() => {
     }
   })
 
-  return stormPlayers
+  return storm
 })
+
 
 
 function initSetup(n) {
