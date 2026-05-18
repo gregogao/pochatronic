@@ -19,83 +19,31 @@ const game = reactive({
 const history = ref([])
 const activeTab = ref('table') 
 
-// --- PERSISTENCIA ---
+// --- LÓGICA DE PERSISTENCIA ---
 const saveCurrentGame = () => {
-  try {
-    if (game.phase === 'playing') {
-      localStorage.setItem('pocha_current_backup', JSON.stringify(game))
-    }
-  } catch (e) {
-    console.warn('Error guardando partida', e)
+  if (game.phase === 'playing') {
+    localStorage.setItem('pocha_current_backup', JSON.stringify(game))
   }
 }
 
 const loadAllData = () => {
-  try {
-    const savedHistory = localStorage.getItem('pocha_history_list')
-    if (savedHistory) history.value = JSON.parse(savedHistory)
-
-    const backup = localStorage.getItem('pocha_current_backup')
-    if (backup) {
-      const data = JSON.parse(backup)
-      Object.assign(game, data)
-
-      // ✅ AUTO-REANUDAR
-      if (data.phase === 'playing') {
-        game.phase = 'playing'
-      }
-    }
-  } catch (e) {
-    console.warn('Error cargando datos', e)
+  const savedHistory = localStorage.getItem('pocha_history_list')
+  if (savedHistory) history.value = JSON.parse(savedHistory)
+  const backup = localStorage.getItem('pocha_current_backup')
+  if (backup) {
+    const data = JSON.parse(backup)
+    Object.assign(game, data)
   }
 }
 
-// ✅ WATCH GLOBAL (ANTES solo rounds)
-watch(
-  game,
-  () => saveCurrentGame(),
-  { deep: true }
-)
+watch(() => game.rounds, () => saveCurrentGame(), { deep: true })
+/*onMounted(() => loadAllData())*/
 
-// ✅ HOOKS DE ANDROID / NAVEGADOR
 onMounted(() => {
-  loadAllData()
-
-  // Centrado tabla
   const wrapper = document.querySelector('.table-wrapper')
   if (wrapper) {
     wrapper.scrollLeft = (wrapper.scrollWidth - wrapper.clientWidth) / 2
   }
-
-  // ✅ GUARDADO CRÍTICO
-  window.addEventListener('visibilitychange', () => {
-    if (document.visibilityState === 'hidden') {
-      saveCurrentGame()
-    }
-  })
-
-  window.addEventListener('pagehide', () => {
-    saveCurrentGame()
-  })
-
-  window.addEventListener('beforeunload', () => {
-    saveCurrentGame()
-  })
-
-  // ✅ CONTROL BOTÓN ATRÁS ANDROID
-  window.history.pushState(null, "", window.location.href)
-
-  window.addEventListener("popstate", () => {
-    if (game.phase === 'playing') {
-      const salir = confirm("¿Salir de la partida? Se guardará automáticamente.")
-      if (salir) {
-        saveCurrentGame()
-        exitGame()
-      } else {
-        window.history.pushState(null, "", window.location.href)
-      }
-    }
-  })
 })
 
 const dealerByRound = computed(() => {
@@ -124,41 +72,6 @@ const hotPlayers = computed(() => {
   return hotIndices
 })
 
-
-
-const stormPlayers = computed(() => {
-  console.log('STORM RESULT:', storm)
-
-  const storm = new Set()
-
-  game.players.forEach((_, pIndex) => {
-    let streak = 0
-
-    for (const round of game.rounds) {
-      const score = round.scores[pIndex]
-
-      if (score === null) {
-        streak = 0
-        continue
-      }
-
-      if (score < 0) {
-        streak++
-        if (streak >= 3) {
-          storm.add(pIndex)
-        }
-      } else {
-        streak = 0
-      }
-    }
-  })
-
-  return [...storm]
-})
-
-
-
-
 function initSetup(n) {
   game.numPlayers = n
   game.players = Array.from({ length: n }, (_, i) => ({ id: i, name: '' }))
@@ -183,12 +96,8 @@ function closeScorePicker() {
 }
 
 function pickScore(value) {
-  const normalized =
-    value === null ? null : Number(value)
-
-  game.rounds[scorePicker.rIndex].scores[scorePicker.pIndex] = normalized
+  game.rounds[scorePicker.rIndex].scores[scorePicker.pIndex] = value
   closeScorePicker()
-
 }
 
 function startGame() {
@@ -196,29 +105,29 @@ function startGame() {
     alert('Todos los jugadores deben tener nombre')
     return
   }
-
   let maxCards = game.numPlayers === 3 ? 12 : game.numPlayers === 4 ? 9 : game.numPlayers === 5 ? 7 : 6
   const newRounds = []
-
   for (let i = 0; i < game.numPlayers; i++) {
+    // CAMBIO 3: Scores inicializados como null (vacíos) en lugar de 0
     newRounds.push({ cards: 1, scores: Array(game.numPlayers).fill(null) })
   }
-
   for (let i = 2; i < maxCards; i++) {
     newRounds.push({ cards: i, scores: Array(game.numPlayers).fill(null) })
   }
-
   for (let i = 0; i < game.numPlayers; i++) {
     newRounds.push({ cards: maxCards, scores: Array(game.numPlayers).fill(null) })
   }
-
   game.rounds = newRounds
-  game.startTime = new Date().toLocaleString('es-ES', {
-    day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit'
-  })
+  game.startTime = new Date().toLocaleString('es-ES', { day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit' })
   game.phase = 'playing'
-
   saveCurrentGame()
+}
+
+function prepareScore(rIndex, pIndex) {
+  // Solo inyectamos el 10 si la casilla está realmente vacía
+  if (game.rounds[rIndex].scores[pIndex] === null) {
+    game.rounds[rIndex].scores[pIndex] = 10;
+  }
 }
 
 const getScoreOptionsForRound = (numCards) => {
@@ -228,12 +137,38 @@ const getScoreOptionsForRound = (numCards) => {
 
   for (let n = min; n <= max; n += 5) {
     if (n === 0 || n === 5) continue
-    if (n === 10) options.push(null)
+
+    // Insertamos el "-" justo antes del 10
+    if (n === 10) {
+      options.push(null)
+    }
+
     options.push(n)
   }
 
   return options
 }
+
+
+/*const getScoreOptionsForRound = (numCards) => {
+  const min = -(numCards * 5);
+  const max = 10 + (numCards * 5);
+  const options = [];
+  
+  for (let n = min; n <= max; n += 5) {
+    // Saltamos el 0 y el 5 según tus reglas
+    if (n === 0 || n === 5) continue;
+
+    // JUSTO AQUÍ: Si ya hemos pasado el -5 y el siguiente es el 10,
+    // metemos el valor null (el guion) en medio.
+    if (n === 10) {
+      options.push(null); 
+    }
+
+    options.push(n);
+  }
+  return options;
+}*/
 
 const totals = computed(() => {
   return game.players.map((player, pIndex) => {
@@ -277,12 +212,14 @@ const ranking = computed(() => {
 
 function finishAndSave() {
   if (confirm("¿Finalizar y guardar esta partida en el historial?")) {
+    // Generamos la cadena del ranking: "Jugador1, Jugador2..." ordenados por puntos
     const rankingString = ranking.value.map(p => p.name).join(', ')
 
     const snapshot = {
       date: game.startTime || new Date().toLocaleString(),
       winner: ranking.value[0]?.name || '---',
       winnerScore: ranking.value[0]?.total || 0,
+      // Guardamos el ranking ordenado en lugar del orden original de entrada
       players: `Ranking: ${rankingString}` 
     }
     
@@ -294,7 +231,7 @@ function finishAndSave() {
 }
 
 function finishWithoutSaving() {
-  if (confirm("¿Seguro que quieres cerrar la partida?")) {
+  if (confirm("¿Seguro que quieres cerrar la partida? No se guardará en el historial.")) {
     exitGame()
   }
 }
@@ -310,14 +247,9 @@ function exitGame() {
 </script>
 
 <template>
-
-  <div style="background: yellow">
-    TEST VISUAL
-  </div>
-
   <div id="app" :class="{ 'is-playing': game.phase === 'playing' }">
     <header v-if="game.phase !== 'playing'">
-      <h1>TEST Pochatronic™ ♠️</h1>
+      <h1>Pochatronic™ ♠️</h1>
     </header>
 
     <main v-if="game.phase === 'menu'" class="setup-container">
@@ -368,9 +300,6 @@ function exitGame() {
 
     <main v-else-if="game.phase === 'playing'" class="game-container">
       <div v-show="activeTab === 'table'" class="tab-content">
-        <div style="color:red; font-size:12px">
-          Storm DEBUG: {{ stormPlayers }}
-        </div>
         <div class="table-wrapper full-screen-table">
           <table class="full-width-table">
             <thead>
@@ -381,7 +310,6 @@ function exitGame() {
                     :class="{ 'is-hot': hotPlayers.has(pIndex) }">
                   {{ p.name.toUpperCase() }}
                   <span v-if="hotPlayers.has(pIndex)">💩</span>
-                  <span v-if="stormPlayers.includes(pIndex)">🌩️</span>
                 </th>
               </tr>
             </thead>
@@ -422,7 +350,6 @@ function exitGame() {
               <span v-if="index === ranking.length - 1 && index > 2">🏮 </span>
               {{ player.name }}
               <span v-if="hotPlayers.has(player.originalIndex)"> 💩</span>
-              <span v-if="stormPlayers.has(player.originalIndex)"> 🌩️</span>
             </span>
             <span class="rank-details">{{ player.statLine }}</span>
           </div>
