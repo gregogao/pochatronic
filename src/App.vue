@@ -127,6 +127,8 @@ const hotPlayers = computed(() => {
 
 
 const stormPlayers = computed(() => {
+  console.log('STORM RESULT:', storm)
+
   const storm = new Set()
 
   game.players.forEach((_, pIndex) => {
@@ -361,6 +363,9 @@ function exitGame() {
 
     <main v-else-if="game.phase === 'playing'" class="game-container">
       <div v-show="activeTab === 'table'" class="tab-content">
+        <div style="color:red; font-size:12px">
+          Storm DEBUG: {{ stormPlayers }}
+        </div>
         <div class="table-wrapper full-screen-table">
           <table class="full-width-table">
             <thead>
