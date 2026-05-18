@@ -128,13 +128,13 @@ const stormPlayers = computed(() => {
   const stormIndices = new Set()
 
   game.players.forEach((_, pIndex) => {
-    let negativeStreak = 0
+    let streak = 0
     let stormActive = false
 
     for (const round of game.rounds) {
       const score = round.scores[pIndex]
 
-      // ✅ Ignorar casillas vacías
+      // ✅ ignorar casillas vacías
       if (score === null || score === undefined) {
         continue
       }
@@ -142,24 +142,25 @@ const stormPlayers = computed(() => {
       const num = Number(score)
 
       if (num < 0) {
-        negativeStreak++
+        streak++
 
-        if (negativeStreak >= 3) {
+        // ✅ activar tormenta al llegar a 3
+        if (streak >= 3) {
           stormActive = true
         }
 
       } else if (num > 0) {
-        // ✅ Positivo corta la tormenta
-        negativeStreak = 0
+        // ✅ solo el positivo rompe la tormenta
+        streak = 0
         stormActive = false
       }
 
-      // ✅ Si hay tormenta activa en este punto
-      if (stormActive) {
-        stormIndices.add(pIndex)
-      } else {
-        stormIndices.delete(pIndex)
-      }
+      // ❗ IMPORTANTE: NO tocar stormIndices aquí
+    }
+
+    // ✅ al final del recorrido del jugador se decide
+    if (stormActive) {
+      stormIndices.add(pIndex)
     }
   })
 
