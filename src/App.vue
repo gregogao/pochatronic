@@ -310,6 +310,11 @@ function exitGame() {
 </script>
 
 <template>
+
+  <div style="background: yellow">
+    TEST VISUAL
+  </div>
+
   <div id="app" :class="{ 'is-playing': game.phase === 'playing' }">
     <header v-if="game.phase !== 'playing'">
       <h1>Pochatronic™ ♠️</h1>
