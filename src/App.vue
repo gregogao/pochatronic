@@ -124,7 +124,6 @@ const hotPlayers = computed(() => {
   return hotIndices
 })
 
-
 const stormPlayers = computed(() => {
   const stormIndices = new Set()
 
@@ -135,13 +134,22 @@ const stormPlayers = computed(() => {
     for (const round of game.rounds) {
       const score = round.scores[pIndex]
 
-      // casilla vacía rompe la secuencia
-      if (score === null || score === undefined) {
+      // ignorar vacíos reales
+      if (
+        score === null ||
+        score === undefined ||
+        score === ''
+      ) {
         streak = 0
         continue
       }
 
-      const num = Number(score)
+      const num = parseInt(score, 10)
+
+      if (isNaN(num)) {
+        streak = 0
+        continue
+      }
 
       if (num < 0) {
         streak++
@@ -154,7 +162,6 @@ const stormPlayers = computed(() => {
         streak = 0
         stormActive = false
       } else {
-        // cualquier otro valor reinicia
         streak = 0
       }
     }
