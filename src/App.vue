@@ -126,7 +126,6 @@ const hotPlayers = computed(() => {
 
 
 
-
 const stormPlayers = computed(() => {
   const storm = new Set()
 
@@ -134,17 +133,14 @@ const stormPlayers = computed(() => {
     let streak = 0
 
     for (const round of game.rounds) {
-      const scores = [...round.scores] // 👈 CLAVE
-      const raw = scores[pIndex]
+      const score = round.scores[pIndex]
 
-      if (raw === null) {
+      if (score === null) {
         streak = 0
         continue
       }
 
-      const score = Number(raw)
-
-      if (!isNaN(score) && score < 0) {
+      if (score < 0) {
         streak++
         if (streak >= 3) {
           storm.add(pIndex)
@@ -185,8 +181,12 @@ function closeScorePicker() {
 }
 
 function pickScore(value) {
-  game.rounds[scorePicker.rIndex].scores[scorePicker.pIndex] = value
+  const normalized =
+    value === null ? null : Number(value)
+
+  game.rounds[scorePicker.rIndex].scores[scorePicker.pIndex] = normalized
   closeScorePicker()
+
 }
 
 function startGame() {
