@@ -124,6 +124,7 @@ const hotPlayers = computed(() => {
   return hotIndices
 })
 
+
 const stormPlayers = computed(() => {
   const stormIndices = new Set()
 
@@ -134,8 +135,9 @@ const stormPlayers = computed(() => {
     for (const round of game.rounds) {
       const score = round.scores[pIndex]
 
-      // ✅ ignorar casillas vacías
+      // casilla vacía rompe la secuencia
       if (score === null || score === undefined) {
+        streak = 0
         continue
       }
 
@@ -144,21 +146,19 @@ const stormPlayers = computed(() => {
       if (num < 0) {
         streak++
 
-        // ✅ activar tormenta al llegar a 3
         if (streak >= 3) {
           stormActive = true
         }
 
       } else if (num > 0) {
-        // ✅ solo el positivo rompe la tormenta
         streak = 0
         stormActive = false
+      } else {
+        // cualquier otro valor reinicia
+        streak = 0
       }
-
-      // ❗ IMPORTANTE: NO tocar stormIndices aquí
     }
 
-    // ✅ al final del recorrido del jugador se decide
     if (stormActive) {
       stormIndices.add(pIndex)
     }
@@ -166,6 +166,8 @@ const stormPlayers = computed(() => {
 
   return stormIndices
 })
+
+
 
 function initSetup(n) {
   game.numPlayers = n
