@@ -374,7 +374,7 @@ function exitGame() {
                     :class="{ 'is-hot': hotPlayers.has(pIndex) }">
                   {{ p.name.toUpperCase() }}              
                   <span v-if="hotPlayers.has(pIndex)">💩</span>
-                  <span v-if="stormPlayers.has(pIndex)">🌧️💀</span>
+                  <span v-if="stormPlayers.has(pIndex)">🌧️</span>
                 </th>
               </tr>
             </thead>
@@ -415,7 +415,7 @@ function exitGame() {
               <span v-if="index === ranking.length - 1 && index > 2">🏮 </span>
               {{ player.name }}
               <span v-if="hotPlayers.has(player.originalIndex)"> 💩</span>
-              <span v-if="stormPlayers.has(player.originalIndex)"> 🌧️💀</span>
+              <span v-if="stormPlayers.has(player.originalIndex)"> 🌧️</span>
             </span>
             <span class="rank-details">{{ player.statLine }}</span>
           </div>
