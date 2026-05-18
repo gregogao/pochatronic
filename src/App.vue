@@ -106,73 +106,27 @@ const dealerByRound = computed(() => {
   })
 })
 
-const hotPlayers = computed(() => {
-  const hotIndices = new Set()
-  game.players.forEach((_, pIndex) => {
-    let streak = 0
-    for (const round of game.rounds) {
-      if (round.cards > 1) {
-        if (Number(round.scores[pIndex]) === 10) {
-          streak++
-          if (streak >= 4) hotIndices.add(pIndex)
-        } else {
-          streak = 0
-        }
-      }
-    }
-  })
-  return hotIndices
-})
 
 const stormPlayers = computed(() => {
   const stormIndices = new Set()
 
   game.players.forEach((_, pIndex) => {
     let streak = 0
-    let stormActive = false
 
     for (const round of game.rounds) {
-      const score = round.scores[pIndex]
-
-      // ignorar vacíos reales
-      if (
-        score === null ||
-        score === undefined ||
-        score === ''
-      ) {
-        streak = 0
-        continue
-      }
-
-      const num = parseInt(score, 10)
-
-      if (isNaN(num)) {
-        streak = 0
-        continue
-      }
-
-      if (num < 0) {
-        streak++
-
-        if (streak >= 3) {
-          stormActive = true
+      if (round.cards > 1) {
+        if (Number(round.scores[pIndex]) < 0) {
+          streak++
+          if (streak >= 3) {
+            stormIndices.add(pIndex)
+          }
+        } else {
+          streak = 0
         }
-
-      } else if (num > 0) {
-        streak = 0
-        stormActive = false
-      } else {
-        streak = 0
       }
-    }
-
-    if (stormActive) {
-      stormIndices.add(pIndex)
     }
   })
 
-  return stormIndices
-})
 
 
 
