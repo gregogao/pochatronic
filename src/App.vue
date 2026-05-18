@@ -124,6 +124,46 @@ const hotPlayers = computed(() => {
   return hotIndices
 })
 
+
+const stormPlayers = computed(() => {
+  const stormIndices = new Set()
+
+  game.players.forEach((_, pIndex) => {
+    let streak = 0
+    let inStorm = false
+
+    for (const round of game.rounds) {
+      const score = Number(round.scores[pIndex])
+
+      if (score < 0) {
+        streak++
+
+        if (streak >= 3) {
+          inStorm = true
+          stormIndices.add(pIndex)
+        }
+      } else if (score > 0) {
+        // Se rompe la racha y se quita la tormenta
+        streak = 0
+        inStorm = false
+        stormIndices.delete(pIndex)
+      } else {
+        // score = 0 o null → no rompe tormenta pero tampoco suma
+        streak = 0
+      }
+    }
+
+    // Si termina en tormenta → se queda marcado
+    if (inStorm) {
+      stormIndices.add(pIndex)
+    }
+  })
+
+  return stormIndices
+})
+
+
+
 function initSetup(n) {
   game.numPlayers = n
   game.players = Array.from({ length: n }, (_, i) => ({ id: i, name: '' }))
@@ -334,6 +374,7 @@ function exitGame() {
                     :class="{ 'is-hot': hotPlayers.has(pIndex) }">
                   {{ p.name.toUpperCase() }}
                   <span v-if="hotPlayers.has(pIndex)">💩</span>
+                  <span v-if="stormPlayers.has(pIndex)">🌩️</span>
                 </th>
               </tr>
             </thead>
@@ -374,6 +415,7 @@ function exitGame() {
               <span v-if="index === ranking.length - 1 && index > 2">🏮 </span>
               {{ player.name }}
               <span v-if="hotPlayers.has(player.originalIndex)"> 💩</span>
+              <span v-if="stormPlayers.has(player.originalIndex)"> 🌩️</span>
             </span>
             <span class="rank-details">{{ player.statLine }}</span>
           </div>
