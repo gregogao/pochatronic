@@ -151,7 +151,7 @@ const stormPlayers = computed(() => {
     }
   })
 
-  return storm
+  return [...storm]
 })
 
 
@@ -371,7 +371,7 @@ function exitGame() {
                     :class="{ 'is-hot': hotPlayers.has(pIndex) }">
                   {{ p.name.toUpperCase() }}
                   <span v-if="hotPlayers.has(pIndex)">💩</span>
-                  <span v-if="stormPlayers.has(pIndex)">🌩️</span>
+                  <span v-if="stormPlayers.includes(pIndex)">🌩️</span>
                 </th>
               </tr>
             </thead>
